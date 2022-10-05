@@ -1,0 +1,389 @@
+-----------------------------------------
+Infrastructure Creation also updates configuration( at AWS Services Level): CF ( template.yaml ) -> AWS Resource Component.
+EC2 Instance Launch ( UserData )
+- UserData -> executes only when instance is created.
+Update Policy in Instance Role -> CF
+- If we want to make any changes in the userdata scripts.
+-----------------------------------------
+Configuration Management on Linux Level:
+- Create, Update, Copy , Move, Delete Files on EC2 instances
+- Add , remove linux users, install, configure, packages in linux
+-----------------------------------------
+Source Control ( VCS ):
+Github ( Microsoft) , CodeCommit (AWS) , BitBucket(Atlassian) , Gitlab(Gitlab), Azure Repos(Microsoft Azure ), GCP
+git
+
+CICD: source > build > deploy
+AWS CICD, Jenkins( open source CICD ) , CircleCI, Travis CI, Azure DevOps ( Azure )
+
+---------------------------------------------------
+
+20 File Servers
+20 Web Servers
+
+- Copy some files from one host to all 20 hosts.
+- create a linux user on all 20 machines ( new_user )
+	- sudo useradd new_user
+
+1. Servers are in EC2 ( SSM Agent ) - Run Command
+2. Manually login to each node and execute linux command.
+3. If these servers are On-Prem Servers ( Organization is hosting the VM in their own data center )
+4. create a shell script , use ssh to connect from one to all target machines and execute remote commands
+
+- 40 linux servers ( create a linux user : test-user )
+
+--------------------------
+
+# File copy from local to 20 remote servers in Private Network ( Not an aws instance )( Machine does not have internet access )
+SRC_FILE : server.cfg
+DEST_FILE : /opt/tomcat/server.cfg
+
+1. Script:
+cp server.cfg /opt/tomcat/server.cfg -> same host copy
+scp server.cfg /opt/tomcat/server.cfg -> different host copy
+
+Copy this file on all above linux servers under path /opt/tomcat/server.cfg
+
+1. Upload server.cfg on S3 ,and use wget, aws cli to download on linux ( there is no internet access )
+2. Write a shell script using scp command:
+	- Pre-requisite:
+		LS-1 ( key.pem ) -> ssh -> LS-2 ( key.pub in the ~/.ssh/authorized_keys )
+		LS-1 ( key.pem ) -> ssh -> LS-3 ( key.pub in the ~/.ssh/authorized_keys )
+		LS-1 ( key.pem ) -> ssh -> LS-4 ( key.pub in the ~/.ssh/authorized_keys )
+	csv : IP address
+	for server_ip in server.txt
+		scp -i key.pem server.cfg newuser@$server_ip:/opt/tomcat/server.cfg
+		scp(ssh connection) to connect IP <SRC_PATH> <DEST_PATH>
+
+3. Execute commands on remote linux server using ssh : ssh -i key.pem ec2-user@IP "useradd testuser"
+
+# Remote execution of shell script to perform a linux level task
+# server.txt
+10.1.11.2
+10.1.11.1
+10.1.11.3
+
+172.31.0.0/16 -> VPC CIDR
+172.31.0.0/20 -> Subnet CIDR
+
+# Copy files from one linux server to another linux server -> Use SCP
+# Copy files from same linux server to a different path in the same linux server -> CP
+
+# Syntax for scp command?
+scp -i key.pem <SRC_PATH> ec2-user@20.35.65.48:<DEST_PATH>
+
+LS-1 ( user_create.sh )
+	- copy this script user_create.sh into each server and then run this script remotely.
+	- scp -i key.pem user_create.sh user@LS-2:/tmp/user_create.sh
+	- ssh -i key.pem user@LS-2 "bash /tmp/user_create.sh"
+LS-2
+LS-3
+LS-4
+LS-5
+
+yaml:
+task-1
+task-2
+task-3
+
+user_create.sh
+Command-1
+Command-2
+Command-3
+scp user_create.sh from LS-1 to LS-2
+
+yum install python3 -y
+pip3 install boto3
+
+ssh -i private-key.pem ec2-user@28.35.14.65
+/home/ec2-user/.ssh/authorized_keys
+ssh ec2-user@ip
+remote_run.sh
+	for ip in $(cat server.txt); do
+		# Copy the shell script from local to remote path
+		scp -i private-key.pem -v user_create.sh ec2-user@$ip:/home/ec2-user/
+
+		# Execute the shell script copied from previous command on the remote host
+#		ssh -i private-key.pem ec2-user@$ip "bash user_create.sh"
+#		ssh -i private-key.pem ec2-user@$ip "sudo useradd user1"
+	done
+
+user_create.sh
+	useradd user1
+ec2-user@10.1.11.1 : cat user_create.sh
+useradd user1
+
+n = 100 -> IP address ( inventory file  ( control node ) )
+	inventory
+		webserver
+- Linux Servers:
+-> monitoring tool , database server, application server
+	-> applying firewall rules across n number of server
+	-> create users or do some linux operation across n number of server
+
+Configuration Management ( Ansible )
+10.1.11.0 => control node - Linux -> create a user in specific group
+10.1.11.1 - 10.1.11.100 : managed node: Linux/Windows
+
+servers.txt
+10.1.11.2
+.
+.
+.
+10.1.11.100
+
+
+Configuration Management:
+Ansible - Agentless and works in Control Node and Managed Node Setup.
+Ansible is developed in Python.
+	Control Node : execute ansible instruction ( Ansible as package is only required to be installed on control node )
+	Managed Nodes : Instruction will run ( Only requires Python which is already present )
+	- Agentless
+	- PlayBook ( yaml )
+
+Chef - Chef Server ( daemon ) ( control node ) , Chef Agent ( managed node ) ( daemon )
+	- Cookbook
+Puppet - Puppet Server, Puppet Agent
+
+------------------------
+LS-1 -> 10.20.24.26
+LS-2 -> 10.34.56.67
+On LS-1
+	- ping 10.20.24.26
+	- ping ls-2.server.com
+
+/etc/hosts
+10.20.24.26 ls-2.server.com
+
+------------------------Ansible Info-------------------
+# YML Code
+	- CF Template ( cf-template.yml )
+	- CodeBuild ( buildspec.yml )
+	- CodeDEploy ( appspec.yml )
+	- Ansible Ad-Hoc Commands
+		- Ansible Playbook ( ansible-playbook.yml )
+
+Server1
+
+ServerA
+ServerB
+
+Ansible is build on top of Python.
+Control Node : Linux ( Ansible installed )
+Managed Node : Linux/Windows
+
+Windows Server:
+- Ansible cannot be installed on Windows server
+
+ansible - agentless
+control node -> ssh setup ->  managed nodes
+( key.pem ) -> ssh -> (key.pub inside the ~/.ssh/authorized)
+
+10.1.11.1 => 10.1.11.2 => sshd(daemon running)
+ansible only on control node (10.1.11.1) =>
+
+chef - requires a daemon/agent
+10.1.11.1 (chef server running) => 10.1.11.2 (chef client running)
+
+puppet - requires a daemon/agent
+
+===============
+
+Launch 3 machines:
+EC2-A -> control-node
+EC2-B -> managed-node-01
+EC2-C -> managed-node-02
+
+# inventory file
+	- Hosts Information which can grouped.
+# ansible.cfg file
+	- ansible configuration details
+	- Configuration file precedence.
+
+172.31.22.174	control-node.example.com	control-node
+172.31.26.137	managed-node-01.example.com	managed-node-01
+172.31.31.74	managed-node-02.example.com	managed-node-02
+
+control ( private key )  -> ssh -> managed-node-01 ( public key )
+
+control node
+/etc/hosts
+172.31.2.143	control-node.example.com	control-node
+172.31.13.155	managed-node-01.example.com	managed-node-01
+172.31.6.147	managed-node-02.example.com	managed-node-02
+
+ssh -i key.pem ec2-user@172.10.26.68
+
+private_key_file=/path/to/file.pem
+remote_user = ec2-user
+inventory = ./inventory
+	[web]
+	managed-node-02.example.com
+
+
+ansible dev -m user -a 'name=new_user uid=4000 state=present'
+ansible dev -m user -a 'name=new_user uid=4000 state=absent'
+
+ansible webservers -m ping
+ansible dbservers -m ping
+# inventory
+[webservers]
+managed-node-01.example.com
+web{1..100}.example.com
+
+
+[dbservers]
+db1.example.com
+db2.example.com
+
+control-node
+
+admin1 : ansible automation on web and dev servers
+~/.ansible.cfg
+inventory:
+[web]
+
+[dev]
+
+admin2 : file servers
+~/.ansible.cfg
+./ansible.cfg
+[file]
+
+control-node
+~/.ssh/authorized_keys
+ssh-keygen :
+id_rsa
+id_rsa.pub
+
+managed-node-01
+~/.ssh/authorized_keys
+	cat id_rsa.pub
+
+/etc/httpd/httdp.conf
+100 webserver: firewalld
+
+ansible web -m yum -a "name=httpd, state=present"
+ansible web -m copy -a "name=httpd, state=present"
+
+Linux User:
+- devops => have sudo permissions
+
+Condition:
+	IsProd: !Equals[!Ref Env,"prod"]
+
+Resources:
+	S3Bucket:
+		Condition: IsProd
+
+yum package manager : developed in python
+/bin/python
+
+4 | 2 | 1
+r | w | x
+
+rwxrwxr-x
+
+7   |  7  | 7
+rwx | rwx | rwx
+
+httpd
+yum install httpd
+apt install apache2
+
+- Install a linux package
+- Change the config file
+- copy some file on some path
+- restart the daemon
+
+devops -> linux user
+Ubuntu
+Centos
+amazon linux
+
+ansible-playbook release.yml --extra-vars "version=1.23.45 other_variable=foo"
+
+ansible myhost -m ping --extra-vars "username=CLIVARIABLEUSERNAME password=CLIVARIABLEPASSWORD"
+- username: "PlayVariableusername"
+- password: "PlayVariablepassword"
+
+
+------------------
+172.31.16.36	control-node.example.com	control-node
+172.31.28.186	managed-node-01.example.com	managed-node-01
+172.31.16.240	managed-node-02.example.com	managed-node-02
+172.31.17.207	managed-node-03.example.com	managed-node-03
+
+
+RHEL - 8
+Centos 7 - free
+
+RHEL-7
+Centos 6 was free
+
+firewall-cmd --zone=public --list-services
+firewall-cmd --permanent --zone=public --remove-service=http
+firewall-cmd --permanent --zone=public --add-service=http
+
+control node : httpd.j2
+----------------
+
+Config file precedence
+
+
+Variable precedence
+
+
+a=10
+echo $a
+
+{{ a }}
+
+
+playbook :
+1
+2 - test
+3 - test
+4
+5 - test
+6
+---------------------------------------
+/etc/httpd/httpd.conf
+HOST = "managed-node-01.example.com"
+
+----------------------------------------
+/etc/httpd/httpd.conf
+HOST = "managed-node-02.example.com"
+
+========================================================================================
+Launch a new instance and create a SG and attach it to an instance.
+- AWS Console
+- aws cli commands ->
+- CF Template and stacks -> IAC
+- Python Lambda ( boto3.client('ec2') ) -> 
+- Ansible Playbook
+	- Configuration management ( Linux Level )
+	- Infrastructure provisioning
+
+- Backup scenario
+- backup files on EC2 instance from path-A to path-B daily ( cron tab)
+- backup ec2 ebs snapshot and copy files on s3 : lambda ( CW event )
+
+===============================================
+Scripting:
+	bash scripting
+	Python
+Cloud
+	AWS
+	Azure
+	GCP
+IAC
+	CloudFormation
+	TerraForm
+CM Tools
+	Ansible
+	Chef
+	Puppet
+CICD
+	AWS CICD - CodeBuild, CodeDeploy, CodePipeline
+	Jenkins
